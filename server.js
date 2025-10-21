@@ -36,4 +36,39 @@ app.post(' /auth/login', async(req, res) => {
         return res.status(400).json({ msg: 'Prencha email e senha!'});
     }
 
+    const user = await database.findByEmail(email);
+    if(!user){
+        return res.status(400).json({ msg: 'Usuário não encontrado' })
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if(!isPasswordValid){
+        return res.status(401).json({ msg: 'Senha inválida!'});
+    }
+
+    const token = jwt.sign(
+        { id: user.id, email: user.email},
+        process.env.JWT_SECRET || 'minhaChaveSuperSecrete',
+        { expiresId: 'id'}
+    );
+
+    res.json({
+        msg: 'Login realizado!',
+        token,
+        user: { id: user.id, name: user.name, email: user.email}
+    });
+});
+
+//teste de rota protegida
+app.get(' /protected', (req, res) => {
+    const authHeader = req.headers.authorization;
+    if(!authHeader) return res.status(401).json({ msg: 'Token não fornecido!'});
+
+    const token = authHeader.split(' ')[1];
+    try{
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'minhaChaveSuperSecreta');
+        res.json( {msg: 'Acesso autorizado! ', decoded});
+    }catch(err){
+        res.status(401).json({ msg: 'Token inválido!'});
+    }
 })
