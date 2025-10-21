@@ -71,4 +71,38 @@ app.get(' /protected', (req, res) => {
     }catch(err){
         res.status(401).json({ msg: 'Token inválido!'});
     }
-})
+});
+
+//GET /users
+app.get(' /users', async(req, res) => {
+    const users = await database.list();
+    res.json(users);
+});
+
+//POST /users
+app.post(' /users', async(req, res) => {
+    const { name, email, password} = req.body;
+    if(!name || !email || !password){
+        return res.status(400).json({ msg: 'Preencha todos os campos!'});
+    }
+    await database.create ({ name, email, password });
+    res.status(201).send();
+});
+
+//PUT /users/:id
+app.put(' /user/:id', async(req, res) => {
+    const id = req.params.id;
+    const user = req.body;
+    await database.update(id, user);
+    res.status(204).send();
+});
+
+app.delete(' /user/:id', async(req, res) => {
+    const id = req.params.id;
+    await database.delete(id);
+    res.status(204).send();
+});
+
+app.listen(3001, () => {
+    console.log('Servidor rodando na porta 3001');
+});
